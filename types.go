@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"rss/internal/database"
 
 	"github.com/uzairkhan98/rss/config"
 )
 
 type state struct {
 	config *config.Config
+	db     *database.Queries
 }
 
 type command struct {

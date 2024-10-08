@@ -1,8 +1,12 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
+	"rss/internal/database"
+
+	_ "github.com/lib/pq"
 
 	"github.com/uzairkhan98/rss/config"
 )
@@ -12,12 +16,19 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	statePoint := &state{config: config}
+	db, err := sql.Open("postgres", config.DbURL)
+	if err != nil {
+		panic(err)
+	}
+	dbQueries := database.New(db)
+
+	statePoint := &state{config: config, db: dbQueries}
 	commands := &commands{
 		mapper: make(map[string]func(*state, command) error),
 	}
 
 	commands.register("login", handlerLogin)
+	commands.register("register", handlerRegistration)
 
 	args := os.Args
 

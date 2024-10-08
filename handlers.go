@@ -10,6 +10,23 @@ import (
 	"github.com/google/uuid"
 )
 
+func handlerUserList(s *state, _ command) error {
+	users, err := s.db.GetUserList(context.Background())
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	for _, user := range users {
+		temp := ""
+		if user.Name == s.config.CurrentUserName {
+			temp = "(current)"
+		}
+		fmt.Printf("* %s %s\n", user.Name, temp)
+	}
+	return nil
+}
+
 func handlerReset(s *state, _ command) error {
 	err := s.db.ResetUsers(context.Background())
 

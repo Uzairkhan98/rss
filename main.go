@@ -29,10 +29,11 @@ func main() {
 
 	commands.register("login", handlerLogin)
 	commands.register("register", handlerRegistration)
+	commands.register("reset", handlerReset)
 
 	args := os.Args
 
-	if len(args) <= 2 {
+	if len(args) <= 1 {
 		fmt.Println("you need to provide at least two cli arguments")
 		os.Exit(1)
 	}

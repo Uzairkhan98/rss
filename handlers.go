@@ -10,6 +10,17 @@ import (
 	"github.com/google/uuid"
 )
 
+func handlerReset(s *state, _ command) error {
+	err := s.db.ResetUsers(context.Background())
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	os.Exit(0)
+	return nil
+}
+
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.args) == 0 {
 		return fmt.Errorf("the login handler expects a single argument, the username")

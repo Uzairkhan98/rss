@@ -10,6 +10,16 @@ import (
 	"github.com/google/uuid"
 )
 
+func handleAgg(_ *state, _ command) error {
+	res, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Feed Aggregator:\n")
+	fmt.Println(res)
+	return nil
+}
+
 func handlerUserList(s *state, _ command) error {
 	users, err := s.db.GetUserList(context.Background())
 

@@ -10,6 +10,17 @@ import (
 	"github.com/google/uuid"
 )
 
+func handleGetFeedList(s *state, _ command) error {
+	feeds, err := s.db.GetFeedList(context.Background())
+	if err != nil {
+		return err
+	}
+	for _, feed := range feeds {
+		fmt.Println(feed)
+	}
+	return nil
+}
+
 func handleAddFeed(s *state, c command) error {
 	currentUser, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
 	if err != nil {
@@ -23,7 +34,7 @@ func handleAddFeed(s *state, c command) error {
 	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
 		Name:      c.args[0],
 		Url:       c.args[1],
-		UserID:    uuid.NullUUID{UUID: currentUser.ID, Valid: true},
+		UserID:    currentUser.ID,
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

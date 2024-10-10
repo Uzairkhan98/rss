@@ -9,3 +9,9 @@ VALUES (
     $6
 )
 RETURNING *;
+
+-- name: GetFeedList :many
+SELECT f.name, f.url, u.name AS user FROM 
+feeds f 
+LEFT JOIN users u 
+ON f.user_id = u.id; 

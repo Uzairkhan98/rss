@@ -10,6 +10,31 @@ import (
 	"github.com/google/uuid"
 )
 
+func handleAddFeed(s *state, c command) error {
+	currentUser, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
+	if err != nil {
+		return err
+	}
+
+	if len(c.args) < 2 {
+		os.Exit(1)
+	}
+
+	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
+		Name:      c.args[0],
+		Url:       c.args[1],
+		UserID:    uuid.NullUUID{UUID: currentUser.ID, Valid: true},
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Println(feed)
+	return nil
+}
+
 func handleAgg(_ *state, _ command) error {
 	res, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
 	if err != nil {

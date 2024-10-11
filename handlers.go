@@ -106,14 +106,19 @@ func handlerAddFeed(s *state, c command, user *database.User) error {
 	return nil
 }
 
-func handlerAgg(_ *state, _ command) error {
-	res, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+func handlerAgg(s *state, c command) error {
+	if len(c.args) < 1 {
+		return fmt.Errorf("please provide a time between reqs")
+	}
+	duration, err := time.ParseDuration(c.args[0])
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Feed Aggregator:\n")
-	fmt.Println(res)
-	return nil
+	fmt.Printf("Collecting feeds every %s\n", duration)
+	ticker := time.NewTicker(duration)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
 }
 
 func handlerUserList(s *state, _ command) error {

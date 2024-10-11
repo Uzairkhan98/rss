@@ -27,3 +27,8 @@ LEFT JOIN feeds feed
 LEFT JOIN users "user" 
     ON ff.user_id = "user".id
 WHERE "user".name = $1;
+
+-- name: DeleteFeedFollow :exec
+DELETE FROM feed_follows ff
+WHERE ff.user_id = $1 
+AND ff.feed_id = (SELECT id FROM feeds where url = $2); 

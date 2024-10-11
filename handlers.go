@@ -10,6 +10,20 @@ import (
 	"github.com/google/uuid"
 )
 
+func handlerUnfollow(s *state, c command, user *database.User) error {
+	if len(c.args) < 1 {
+		return fmt.Errorf("please provide a feed URL")
+	}
+	err := s.db.DeleteFeedFollow(context.Background(), database.DeleteFeedFollowParams{
+		UserID: user.ID,
+		Url:    c.args[0],
+	})
+	if err != nil {
+		return fmt.Errorf("error unfollowing feed: %w", err)
+	}
+	return nil
+}
+
 func handlerGetUserFollowedFeeds(s *state, _ command, _ *database.User) error {
 	followedFeeds, err := s.db.GetFeedFollowsForUser(context.Background(), s.config.CurrentUserName)
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func handleGetUserFollowedFeeds(s *state, _ command) error {
+func handlerGetUserFollowedFeeds(s *state, _ command, _ *database.User) error {
 	followedFeeds, err := s.db.GetFeedFollowsForUser(context.Background(), s.config.CurrentUserName)
 	if err != nil {
 		return err
@@ -21,20 +21,20 @@ func handleGetUserFollowedFeeds(s *state, _ command) error {
 	return nil
 }
 
-func handleAddFollow(s *state, c command) error {
+func handlerAddFollow(s *state, c command, user *database.User) error {
 	if len(c.args) < 1 {
 		return fmt.Errorf("please provide a feed URL")
 	}
-	currentUser, feed, err := fetchFeedURLAndUsers(c.args[0], s)
+	feed, err := s.db.GetFeedByURL(context.Background(), c.args[0])
 	if err != nil {
-		return err
+		return fmt.Errorf("error fetching feed: %w", err)
 	}
 
 	feedFollow, err := s.db.CreateFollow(context.Background(), database.CreateFollowParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		UserID:    currentUser.ID,
+		UserID:    user.ID,
 		FeedID:    feed.ID,
 	})
 
@@ -50,7 +50,7 @@ func handleAddFollow(s *state, c command) error {
 	return nil
 }
 
-func handleGetFeedList(s *state, _ command) error {
+func handlerGetFeedList(s *state, _ command) error {
 	feeds, err := s.db.GetFeedList(context.Background())
 	if err != nil {
 		return err
@@ -61,20 +61,15 @@ func handleGetFeedList(s *state, _ command) error {
 	return nil
 }
 
-func handleAddFeed(s *state, c command) error {
-	currentUser, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
-	if err != nil {
-		return err
-	}
-
+func handlerAddFeed(s *state, c command, user *database.User) error {
 	if len(c.args) < 2 {
-		return err
+		return fmt.Errorf("please provide a feed name and URL")
 	}
 
 	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
 		Name:      c.args[0],
 		Url:       c.args[1],
-		UserID:    currentUser.ID,
+		UserID:    user.ID,
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -84,7 +79,7 @@ func handleAddFeed(s *state, c command) error {
 	}
 
 	_, err = s.db.CreateFollow(context.Background(), database.CreateFollowParams{
-		UserID:    currentUser.ID,
+		UserID:    user.ID,
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -97,7 +92,7 @@ func handleAddFeed(s *state, c command) error {
 	return nil
 }
 
-func handleAgg(_ *state, _ command) error {
+func handlerAgg(_ *state, _ command) error {
 	res, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
 	if err != nil {
 		return err

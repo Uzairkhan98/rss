@@ -34,6 +34,8 @@ func main() {
 	commands.register("agg", handleAgg)
 	commands.register("addfeed", handleAddFeed)
 	commands.register("feeds", handleGetFeedList)
+	commands.register("follow", handleAddFollow)
+	commands.register("following", handleGetUserFollowedFeeds)
 
 	args := os.Args
 
@@ -45,5 +47,6 @@ func main() {
 	err = commands.run(statePoint, *command)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
 }

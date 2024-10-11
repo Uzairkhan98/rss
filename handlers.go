@@ -10,6 +10,46 @@ import (
 	"github.com/google/uuid"
 )
 
+func handleGetUserFollowedFeeds(s *state, _ command) error {
+	followedFeeds, err := s.db.GetFeedFollowsForUser(context.Background(), s.config.CurrentUserName)
+	if err != nil {
+		return err
+	}
+	for _, feed := range followedFeeds {
+		fmt.Printf("Feed Name: %s\n, User Name: %s\n", feed.FeedName.String, feed.UserName.String)
+	}
+	return nil
+}
+
+func handleAddFollow(s *state, c command) error {
+	if len(c.args) < 1 {
+		return fmt.Errorf("please provide a feed URL")
+	}
+	currentUser, feed, err := fetchFeedURLAndUsers(c.args[0], s)
+	if err != nil {
+		return err
+	}
+
+	feedFollow, err := s.db.CreateFollow(context.Background(), database.CreateFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    currentUser.ID,
+		FeedID:    feed.ID,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if feedFollow.FeedName.Valid && feedFollow.UserName.Valid {
+		fmt.Printf("Feed Name: %s\n, User Name: %s\n", feedFollow.FeedName.String, feedFollow.UserName.String)
+	} else {
+		fmt.Println("Feed Name or User Name is not valid")
+	}
+	return nil
+}
+
 func handleGetFeedList(s *state, _ command) error {
 	feeds, err := s.db.GetFeedList(context.Background())
 	if err != nil {
@@ -28,7 +68,7 @@ func handleAddFeed(s *state, c command) error {
 	}
 
 	if len(c.args) < 2 {
-		os.Exit(1)
+		return err
 	}
 
 	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
@@ -38,6 +78,17 @@ func handleAddFeed(s *state, c command) error {
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.CreateFollow(context.Background(), database.CreateFollowParams{
+		UserID:    currentUser.ID,
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		FeedID:    feed.ID,
 	})
 	if err != nil {
 		return err
@@ -61,7 +112,7 @@ func handlerUserList(s *state, _ command) error {
 
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 	for _, user := range users {
 		temp := ""
@@ -78,7 +129,7 @@ func handlerReset(s *state, _ command) error {
 
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 	os.Exit(0)
 	return nil
@@ -92,7 +143,7 @@ func handlerLogin(s *state, cmd command) error {
 	user, err := s.db.GetUser(context.Background(), cmd.args[0])
 
 	if err != nil {
-		os.Exit(1)
+		return err
 	}
 
 	err = s.config.SetUser(user.Name)
@@ -119,7 +170,7 @@ func handlerRegistration(s *state, cmd command) error {
 	user, err := s.db.CreateUser(context.Background(), temp)
 
 	if err != nil {
-		os.Exit(1)
+		return err
 	}
 
 	err = s.config.SetUser(user.Name)

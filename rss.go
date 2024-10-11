@@ -5,7 +5,11 @@ import (
 	"encoding/xml"
 	"html"
 	"io"
+	"log"
 	"net/http"
+	"os"
+	"rss/internal/database"
+	"sync"
 )
 
 func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
@@ -46,4 +50,49 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	}
 
 	return &feed, nil
+}
+
+func fetchFeedURLAndUsers(feed_url string, s *state) (*database.User, *database.GetFeedByURLRow, error) {
+	var (
+		feed        database.GetFeedByURLRow // assuming Feed is your data structure for feed
+		currentUser database.User            // assuming User is your data structure for user
+		errFeed     error
+		errUser     error
+	)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Run the first function to get the feed concurrently
+	go func() {
+		defer wg.Done()
+		feed, errFeed = s.db.GetFeedByURL(context.Background(), feed_url)
+		if errFeed != nil {
+			log.Println("Error fetching feed:", errFeed)
+			os.Exit(1)
+		}
+	}()
+
+	// Run the second function to get the user concurrently
+	go func() {
+		defer wg.Done()
+		currentUser, errUser = s.db.GetUser(context.Background(), s.config.CurrentUserName)
+		if errUser != nil {
+			log.Println("Error fetching user:", errUser)
+		}
+	}()
+
+	// Wait for both goroutines to complete
+	wg.Wait()
+
+	// Check for errors
+	if errFeed != nil {
+		return &database.User{}, &database.GetFeedByURLRow{}, errFeed
+	}
+
+	if errUser != nil {
+		return &database.User{}, &database.GetFeedByURLRow{}, errUser
+	}
+
+	return &currentUser, &feed, nil
 }

@@ -246,7 +246,3 @@ Displays posts from the feeds the current user is following. Optionally, specify
    ```bash
    ./rss-cli reset
    ```
-
-```
-
-```

@@ -2,11 +2,17 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/xml"
-	"fmt"
 	"html"
 	"io"
+	"log"
 	"net/http"
+	"rss/internal/database"
+	"strings"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 func scrapeFeeds(s *state) error {
@@ -23,7 +29,23 @@ func scrapeFeeds(s *state) error {
 		return err
 	}
 	for _, item := range rss.Channel.Item {
-		fmt.Println(item.Title)
+		_, err = s.db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Title:       item.Title,
+			Description: sql.NullString{String: item.Description, Valid: item.Description != ""},
+			Url:         item.Link,
+			PublishedAt: sql.NullTime{Time: time.Now(), Valid: true},
+			FeedID:      feed.ID,
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				continue
+			}
+			log.Printf("Couldn't create post: %v", err)
+			continue
+		}
 	}
 	return nil
 }
